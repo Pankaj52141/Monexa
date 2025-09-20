@@ -3,6 +3,7 @@
 
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 import {
   LayoutDashboard,
   FileText,
@@ -121,9 +122,9 @@ export default function AppLayout({
               {navigation.map((item) => {
                 const isActive = item.name === currentPage;
                 return (
-                  <a
+                  <Link
                     key={item.name}
-                    href={item.href}
+                    to={item.href}
                     className={cn(
                       "flex items-center space-x-2 px-3 py-2 text-sm font-medium rounded transition-colors duration-200",
                       isActive
@@ -134,7 +135,7 @@ export default function AppLayout({
                   >
                     <item.icon className="h-5 w-5" />
                     <span>{item.name}</span>
-                  </a>
+                  </Link>
                 );
               })}
             </div>
