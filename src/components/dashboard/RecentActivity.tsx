@@ -28,7 +28,7 @@ export default function RecentActivity() {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:4000/api/activities", {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/activities`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();

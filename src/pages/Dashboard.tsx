@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import AppLayout from "@/components/layout/AppLayout";
 import RevenueChart from "@/components/dashboard/RevenueChart";
 import StatsCard from "@/components/dashboard/StatsCard";
-import { DollarSign, TrendingUp } from "lucide-react";
+import RecentActivity from "@/components/dashboard/RecentActivity";
+import { DollarSign, TrendingUp, Users, UserCheck, Crown, ShieldCheck } from "lucide-react";
 
 const API_URL = `${import.meta.env.VITE_API_BASE_URL}/api/dashboard`;
 
@@ -37,6 +38,33 @@ export default function Dashboard({ onLogout }: { onLogout?: () => void }) {
           value={`$${stats?.totalRevenue || 0}`}
           icon={DollarSign}
         />
+
+        {/* Employee Statistics */}
+        <div className="business-card">
+          <h3 className="text-lg font-semibold text-card-foreground mb-4">Employee Overview</h3>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="text-center">
+              <Users className="h-8 w-8 text-primary mx-auto mb-2" />
+              <div className="text-2xl font-bold text-card-foreground">{stats?.totalEmployees || 0}</div>
+              <div className="text-sm text-muted-foreground">Total Employees</div>
+            </div>
+            <div className="text-center">
+              <UserCheck className="h-8 w-8 text-success mx-auto mb-2" />
+              <div className="text-2xl font-bold text-success">{stats?.activeEmployees || 0}</div>
+              <div className="text-sm text-muted-foreground">Active</div>
+            </div>
+            <div className="text-center">
+              <Crown className="h-8 w-8 text-warning mx-auto mb-2" />
+              <div className="text-2xl font-bold text-warning">{stats?.managers || 0}</div>
+              <div className="text-sm text-muted-foreground">Managers</div>
+            </div>
+            <div className="text-center">
+              <ShieldCheck className="h-8 w-8 text-destructive mx-auto mb-2" />
+              <div className="text-2xl font-bold text-destructive">{stats?.admins || 0}</div>
+              <div className="text-sm text-muted-foreground">Admins</div>
+            </div>
+          </div>
+        </div>
 
         {/* Revenue Chart */}
         <div className="business-card">
@@ -79,6 +107,9 @@ export default function Dashboard({ onLogout }: { onLogout?: () => void }) {
             </div>
           </div>
         </div>
+
+        {/* Recent Activity */}
+        <RecentActivity />
       </div>
     </AppLayout>
   );

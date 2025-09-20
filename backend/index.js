@@ -246,18 +246,19 @@ app.delete(`${INVOICE_API}/:id`, authMiddleware, async (req, res) => {
 // -----------------
 app.get("/api/dashboard", authMiddleware, async (req, res) => {
   try {
-    const userId = new mongoose.Types.ObjectId(req.user.userId);
+    // Use string userId directly - Mongoose will convert to ObjectId
+    const userId = req.user.userId;
     
     // Total revenue: sum of paid invoice amounts for this user
     const revenueAgg = await Invoice.aggregate([
-      { $match: { status: "paid", userId: userId } },
+      { $match: { status: "paid", userId: new mongoose.Types.ObjectId(userId) } },
       { $group: { _id: null, sum: { $sum: "$amount" } } },
     ]);
     const totalRevenue = revenueAgg[0]?.sum || 0;
 
     // Monthly revenue trend for this user
     const revenueDataAgg = await Invoice.aggregate([
-      { $match: { status: "paid", userId: userId } },
+      { $match: { status: "paid", userId: new mongoose.Types.ObjectId(userId) } },
       {
         $group: {
           _id: { $month: { $toDate: "$date" } },
@@ -272,9 +273,9 @@ app.get("/api/dashboard", authMiddleware, async (req, res) => {
       revenue: r.revenue,
     }));
 
-    // Breakdown of paid, pending, draft
+    // Breakdown of paid, pending, draft for this user
     const statusBreakdownAgg = await Invoice.aggregate([
-      { $match: { status: { $in: ["paid", "pending", "draft"] } } },
+      { $match: { status: { $in: ["paid", "pending", "draft"] }, userId: new mongoose.Types.ObjectId(userId) } },
       { $group: { _id: "$status", sum: { $sum: "$amount" } } },
     ]);
     const breakdown = { paid: 0, pending: 0, draft: 0 };
@@ -282,10 +283,31 @@ app.get("/api/dashboard", authMiddleware, async (req, res) => {
       breakdown[r._id] = r.sum;
     });
 
+    // Employee statistics for this user
+    const allEmployees = await Employee.find({ userId });
+    const totalEmployees = allEmployees.length;
+    const activeEmployees = allEmployees.filter(e => e.status === "active").length;
+    const inactiveEmployees = allEmployees.filter(e => e.status === "inactive").length;
+    const managers = allEmployees.filter(e => e.role === "manager").length;
+    const admins = allEmployees.filter(e => e.role === "admin").length;
+
+    // Other statistics
+    const totalCustomers = await Customer.countDocuments({ userId });
+    const totalProducts = await Product.countDocuments({ userId });
+    const totalInvoices = await Invoice.countDocuments({ userId });
+
     res.json({
       stats: {
         totalRevenue,
         ...breakdown,
+        totalEmployees,
+        activeEmployees,
+        inactiveEmployees,
+        managers,
+        admins,
+        totalCustomers,
+        totalProducts,
+        totalInvoices,
       },
       revenueData: formattedRevenueData,
     });
@@ -301,12 +323,68 @@ app.get("/api/dashboard", authMiddleware, async (req, res) => {
 // Activities (Mock)
 // -----------------
 app.get("/api/activities", authMiddleware, async (req, res) => {
-  const activities = [
-    { _id: "1", type: "customer", action: "added", details: "New customer registered", time: new Date().toISOString() },
-    { _id: "2", type: "product", action: "updated", details: "Product stock updated", time: new Date().toISOString() },
-    { _id: "3", type: "invoice", action: "created", details: "Invoice #123 created", time: new Date().toISOString() },
-  ];
-  res.json(activities);
+  try {
+    const userId = req.user.userId;
+    
+    // Get recent activities for this user
+    const recentCustomers = await Customer.find({ userId })
+      .sort({ createdAt: -1 })
+      .limit(2)
+      .select('name createdAt');
+    
+    const recentInvoices = await Invoice.find({ userId })
+      .sort({ createdAt: -1 })
+      .limit(2)
+      .select('recipient amount status createdAt');
+    
+    const recentProducts = await Product.find({ userId })
+      .sort({ createdAt: -1 })
+      .limit(2)
+      .select('name stock createdAt');
+
+    const activities = [];
+
+    // Add customer activities
+    recentCustomers.forEach(customer => {
+      activities.push({
+        _id: `customer-${customer._id}`,
+        type: "customer",
+        action: "added",
+        details: `New customer "${customer.name}" registered`,
+        time: customer.createdAt
+      });
+    });
+
+    // Add invoice activities
+    recentInvoices.forEach(invoice => {
+      activities.push({
+        _id: `invoice-${invoice._id}`,
+        type: "invoice",
+        action: "created",
+        details: `Invoice for "${invoice.recipient}" ($${invoice.amount}) - ${invoice.status}`,
+        time: invoice.createdAt
+      });
+    });
+
+    // Add product activities
+    recentProducts.forEach(product => {
+      activities.push({
+        _id: `product-${product._id}`,
+        type: "product",
+        action: "updated",
+        details: `Product "${product.name}" stock: ${product.stock}`,
+        time: product.createdAt
+      });
+    });
+
+    // Sort by time and limit to 5 most recent
+    activities.sort((a, b) => new Date(b.time) - new Date(a.time));
+    
+    res.json(activities.slice(0, 5));
+  } catch (err) {
+    console.error("Activities error:", err);
+    res.json([]); // Return empty array on error
+  }
 });
 
 // -----------------
