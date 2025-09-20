@@ -49,7 +49,7 @@ const getStatusBadge = (status: string) => {
   );
 };
 
-export default function Employees() {
+export default function Employees({ onLogout }: { onLogout?: () => void }) {
   const [employees, setEmployees] = useState<any[]>([]);
   const [form, setForm] = useState({
     name: "",
@@ -132,7 +132,7 @@ export default function Employees() {
   const managers = employees.filter(e => e.role === "manager").length;
 
   return (
-    <AppLayout currentPage="Employees">
+    <AppLayout currentPage="Employees" onLogout={onLogout}>
       <div className="space-y-6">
         {/* Header Actions */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

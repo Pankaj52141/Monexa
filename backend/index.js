@@ -28,12 +28,13 @@ mongoose
 // -----------------
 const productSchema = new mongoose.Schema({
   name: { type: String, required: true },
-  sku: { type: String, required: true, unique: true },
+  sku: { type: String, required: true },
   price: { type: Number, required: true },
   stock: { type: Number, default: 0 },
   category: String,
   status: { type: String, enum: ["active", "inactive"], default: "active" },
   lowStock: { type: Boolean, default: false },
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   createdAt: { type: Date, default: Date.now },
 });
 
@@ -51,14 +52,17 @@ const customerSchema = new mongoose.Schema({
   status: { type: String, default: "active" },
   invoices: { type: Number, default: 0 },
   totalSpent: { type: Number, default: 0 },
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   createdAt: { type: Date, default: Date.now },
 });
 
 const employeeSchema = new mongoose.Schema({
   name: { type: String, required: true },
-  email: { type: String, required: true, unique: true },
+  email: { type: String, required: true },
   phone: String,
   position: String,
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  createdAt: { type: Date, default: Date.now },
 });
 
 const invoiceSchema = new mongoose.Schema({
@@ -68,6 +72,7 @@ const invoiceSchema = new mongoose.Schema({
   status: { type: String, enum: ["pending", "paid", "overdue", "draft"], default: "pending" },
   date: { type: String, required: true },
   dueDate: { type: String, required: true },
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   createdAt: { type: Date, default: Date.now },
 });
 
@@ -140,13 +145,16 @@ app.get("/api/profile", authMiddleware, async (req, res) => {
 // Customer Routes
 // -----------------
 app.get("/api/customers", authMiddleware, async (req, res) => {
-  const customers = await Customer.find().sort({ createdAt: -1 });
+  const customers = await Customer.find({ userId: req.user.userId }).sort({ createdAt: -1 });
   res.json(customers);
 });
 
 app.post("/api/customers", authMiddleware, async (req, res) => {
   try {
-    const customer = await Customer.create(req.body);
+    const customer = await Customer.create({
+      ...req.body,
+      userId: req.user.userId
+    });
     res.json(customer);
   } catch (err) {
     res.status(400).json({ error: "Error creating customer" });
@@ -155,7 +163,12 @@ app.post("/api/customers", authMiddleware, async (req, res) => {
 
 app.put("/api/customers/:id", authMiddleware, async (req, res) => {
   try {
-    const customer = await Customer.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const customer = await Customer.findOneAndUpdate(
+      { _id: req.params.id, userId: req.user.userId },
+      req.body,
+      { new: true }
+    );
+    if (!customer) return res.status(404).json({ error: "Customer not found" });
     res.json(customer);
   } catch (err) {
     res.status(400).json({ error: "Error updating customer" });
@@ -164,7 +177,11 @@ app.put("/api/customers/:id", authMiddleware, async (req, res) => {
 
 app.delete("/api/customers/:id", authMiddleware, async (req, res) => {
   try {
-    await Customer.findByIdAndDelete(req.params.id);
+    const customer = await Customer.findOneAndDelete({
+      _id: req.params.id,
+      userId: req.user.userId
+    });
+    if (!customer) return res.status(404).json({ error: "Customer not found" });
     res.json({ message: "Customer deleted" });
   } catch (err) {
     res.status(400).json({ error: "Error deleting customer" });
@@ -178,7 +195,7 @@ const INVOICE_API = "/api/invoices";
 
 app.get(INVOICE_API, authMiddleware, async (req, res) => {
   try {
-    const invoices = await Invoice.find().sort({ createdAt: -1 });
+    const invoices = await Invoice.find({ userId: req.user.userId }).sort({ createdAt: -1 });
     res.json(invoices);
   } catch (err) {
     res.status(500).json({ error: "Failed to fetch invoices" });
@@ -187,7 +204,10 @@ app.get(INVOICE_API, authMiddleware, async (req, res) => {
 
 app.post(INVOICE_API, authMiddleware, async (req, res) => {
   try {
-    const invoice = await Invoice.create(req.body);
+    const invoice = await Invoice.create({
+      ...req.body,
+      userId: req.user.userId
+    });
     res.json(invoice);
   } catch (err) {
     res.status(400).json({ error: "Error adding invoice" });
@@ -196,7 +216,12 @@ app.post(INVOICE_API, authMiddleware, async (req, res) => {
 
 app.put(`${INVOICE_API}/:id`, authMiddleware, async (req, res) => {
   try {
-    const invoice = await Invoice.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const invoice = await Invoice.findOneAndUpdate(
+      { _id: req.params.id, userId: req.user.userId },
+      req.body,
+      { new: true }
+    );
+    if (!invoice) return res.status(404).json({ error: "Invoice not found" });
     res.json(invoice);
   } catch (err) {
     res.status(400).json({ error: "Error updating invoice" });
@@ -205,7 +230,11 @@ app.put(`${INVOICE_API}/:id`, authMiddleware, async (req, res) => {
 
 app.delete(`${INVOICE_API}/:id`, authMiddleware, async (req, res) => {
   try {
-    await Invoice.findByIdAndDelete(req.params.id);
+    const invoice = await Invoice.findOneAndDelete({
+      _id: req.params.id,
+      userId: req.user.userId
+    });
+    if (!invoice) return res.status(404).json({ error: "Invoice not found" });
     res.json({ message: "Invoice deleted" });
   } catch (err) {
     res.status(400).json({ error: "Error deleting invoice" });
@@ -217,16 +246,18 @@ app.delete(`${INVOICE_API}/:id`, authMiddleware, async (req, res) => {
 // -----------------
 app.get("/api/dashboard", authMiddleware, async (req, res) => {
   try {
-    // Total revenue: sum of paid invoice amounts
+    const userId = new mongoose.Types.ObjectId(req.user.userId);
+    
+    // Total revenue: sum of paid invoice amounts for this user
     const revenueAgg = await Invoice.aggregate([
-      { $match: { status: "paid" } },
+      { $match: { status: "paid", userId: userId } },
       { $group: { _id: null, sum: { $sum: "$amount" } } },
     ]);
     const totalRevenue = revenueAgg[0]?.sum || 0;
 
-    // Monthly revenue trend
+    // Monthly revenue trend for this user
     const revenueDataAgg = await Invoice.aggregate([
-      { $match: { status: "paid" } },
+      { $match: { status: "paid", userId: userId } },
       {
         $group: {
           _id: { $month: { $toDate: "$date" } },
@@ -285,7 +316,7 @@ const PRODUCT_API = "/api/products";
 
 app.get(PRODUCT_API, authMiddleware, async (req, res) => {
   try {
-    const products = await Product.find().sort({ createdAt: -1 });
+    const products = await Product.find({ userId: req.user.userId }).sort({ createdAt: -1 });
     res.json(products);
   } catch (err) {
     res.status(500).json({ error: "Failed to fetch products" });
@@ -294,7 +325,10 @@ app.get(PRODUCT_API, authMiddleware, async (req, res) => {
 
 app.post(PRODUCT_API, authMiddleware, async (req, res) => {
   try {
-    const product = await Product.create(req.body);
+    const product = await Product.create({
+      ...req.body,
+      userId: req.user.userId
+    });
     res.json(product);
   } catch (err) {
     res.status(400).json({ error: "Error adding product" });
@@ -303,7 +337,12 @@ app.post(PRODUCT_API, authMiddleware, async (req, res) => {
 
 app.put(`${PRODUCT_API}/:id`, authMiddleware, async (req, res) => {
   try {
-    const product = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const product = await Product.findOneAndUpdate(
+      { _id: req.params.id, userId: req.user.userId },
+      req.body,
+      { new: true }
+    );
+    if (!product) return res.status(404).json({ error: "Product not found" });
     res.json(product);
   } catch (err) {
     res.status(400).json({ error: "Error updating product" });
@@ -312,7 +351,11 @@ app.put(`${PRODUCT_API}/:id`, authMiddleware, async (req, res) => {
 
 app.delete(`${PRODUCT_API}/:id`, authMiddleware, async (req, res) => {
   try {
-    await Product.findByIdAndDelete(req.params.id);
+    const product = await Product.findOneAndDelete({
+      _id: req.params.id,
+      userId: req.user.userId
+    });
+    if (!product) return res.status(404).json({ error: "Product not found" });
     res.json({ message: "Product deleted" });
   } catch (err) {
     res.status(400).json({ error: "Error deleting product" });
@@ -326,7 +369,7 @@ const EMPLOYEE_API = "/api/employees";
 
 app.get(EMPLOYEE_API, authMiddleware, async (req, res) => {
   try {
-    const employees = await Employee.find().sort({ createdAt: -1 });
+    const employees = await Employee.find({ userId: req.user.userId }).sort({ createdAt: -1 });
     res.json(employees);
   } catch (err) {
     res.status(500).json({ error: "Failed to fetch employees" });
@@ -335,7 +378,10 @@ app.get(EMPLOYEE_API, authMiddleware, async (req, res) => {
 
 app.post(EMPLOYEE_API, authMiddleware, async (req, res) => {
   try {
-    const employee = await Employee.create(req.body);
+    const employee = await Employee.create({
+      ...req.body,
+      userId: req.user.userId
+    });
     res.json(employee);
   } catch (err) {
     res.status(400).json({ error: "Error adding employee" });
@@ -344,7 +390,12 @@ app.post(EMPLOYEE_API, authMiddleware, async (req, res) => {
 
 app.put(`${EMPLOYEE_API}/:id`, authMiddleware, async (req, res) => {
   try {
-    const employee = await Employee.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const employee = await Employee.findOneAndUpdate(
+      { _id: req.params.id, userId: req.user.userId },
+      req.body,
+      { new: true }
+    );
+    if (!employee) return res.status(404).json({ error: "Employee not found" });
     res.json(employee);
   } catch (err) {
     res.status(400).json({ error: "Error updating employee" });
@@ -353,7 +404,11 @@ app.put(`${EMPLOYEE_API}/:id`, authMiddleware, async (req, res) => {
 
 app.delete(`${EMPLOYEE_API}/:id`, authMiddleware, async (req, res) => {
   try {
-    await Employee.findByIdAndDelete(req.params.id);
+    const employee = await Employee.findOneAndDelete({
+      _id: req.params.id,
+      userId: req.user.userId
+    });
+    if (!employee) return res.status(404).json({ error: "Employee not found" });
     res.json({ message: "Employee deleted" });
   } catch (err) {
     res.status(400).json({ error: "Error deleting employee" });

@@ -49,7 +49,7 @@ function getStockBadge(stock, lowStock) {
   );
 }
 
-export default function Products() {
+export default function Products({ onLogout }: { onLogout?: () => void }) {
   const [products, setProducts] = useState([]);
   const [form, setForm] = useState({
     name: "",
@@ -168,7 +168,7 @@ export default function Products() {
   });
 
   return (
-    <AppLayout currentPage="Products">
+    <AppLayout currentPage="Products" onLogout={onLogout}>
       <div className="space-y-6">
         {/* Header Actions */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

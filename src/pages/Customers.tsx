@@ -32,7 +32,7 @@ import { useEffect, useState } from "react";
 
 const API_URL = `${import.meta.env.VITE_API_BASE_URL}/api/customers`;
 
-export default function Customers() {
+export default function Customers({ onLogout }: { onLogout?: () => void }) {
   const [customers, setCustomers] = useState([]);
   const [form, setForm] = useState({
     name: "",
@@ -155,7 +155,7 @@ export default function Customers() {
   });
 
   return (
-    <AppLayout currentPage="Customers">
+    <AppLayout currentPage="Customers" onLogout={onLogout}>
       <div className="space-y-6">
         {/* Header Actions */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

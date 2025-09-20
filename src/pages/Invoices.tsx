@@ -53,7 +53,7 @@ function getStatusBadge(status: string) {
   }
 }
 
-export default function Invoices() {
+export default function Invoices({ onLogout }: { onLogout?: () => void }) {
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -150,7 +150,7 @@ export default function Invoices() {
   };
 
   return (
-    <AppLayout currentPage="Invoices">
+    <AppLayout currentPage="Invoices" onLogout={onLogout}>
       <div className="space-y-6">
         {/* Header Actions */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

@@ -42,10 +42,10 @@ const App = () => {
             <>
               <Routes>
                 <Route path="/" element={<Dashboard onLogout={handleLogout} />} />
-                <Route path="/invoices" element={<Invoices />} />
-                <Route path="/customers" element={<Customers />} />
-                <Route path="/employees" element={<Employees />} />
-                <Route path="/products" element={<Products />} />
+                <Route path="/invoices" element={<Invoices onLogout={handleLogout} />} />
+                <Route path="/customers" element={<Customers onLogout={handleLogout} />} />
+                <Route path="/employees" element={<Employees onLogout={handleLogout} />} />
+                <Route path="/products" element={<Products onLogout={handleLogout} />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
