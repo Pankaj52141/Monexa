@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { FileText, Users, Package, DollarSign } from "lucide-react";
+import { useAppStore } from '@/store/appStore';
 
 const ICONS: Record<string, any> = {
   invoice: FileText,
@@ -17,6 +19,9 @@ interface Activity {
 }
 
 export default function RecentActivity() {
+  const navigate = useNavigate();
+  const { logout } = useAppStore();
+  
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -31,10 +36,27 @@ export default function RecentActivity() {
       const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/activities`, {
         headers: { Authorization: `Bearer ${token}` },
       });
+      
+      if (res.status === 401) {
+        // Authentication failed - redirect to login
+        logout();
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        navigate("/login");
+        return;
+      }
+      
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+      
       const data = await res.json();
-      setActivities(data);
+      // Ensure data is an array
+      setActivities(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Failed to load activities", err);
+      // Set empty array when API fails instead of mock data
+      setActivities([]);
     }
     setLoading(false);
   };
