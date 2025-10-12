@@ -252,4 +252,117 @@
   .text-gradient-cosmic {
     @apply bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent;
   }
+
+  /* Neural Network & Quantum Field Animations */
+  @keyframes float {
+    0%, 100% { transform: translateY(0px) translateX(0px) rotate(0deg); }
+    25% { transform: translateY(-20px) translateX(10px) rotate(90deg); }
+    50% { transform: translateY(-40px) translateX(-5px) rotate(180deg); }
+    75% { transform: translateY(-20px) translateX(-10px) rotate(270deg); }
+  }
+
+  @keyframes float-fast {
+    0%, 100% { transform: translateY(0px) translateX(0px) scale(1); }
+    33% { transform: translateY(-30px) translateX(15px) scale(1.2); }
+    66% { transform: translateY(-60px) translateX(-15px) scale(0.8); }
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% { 
+      box-shadow: 0 0 20px currentColor, 0 0 40px currentColor, 0 0 60px currentColor;
+      transform: scale(1);
+    }
+    50% { 
+      box-shadow: 0 0 40px currentColor, 0 0 80px currentColor, 0 0 120px currentColor;
+      transform: scale(1.1);
+    }
+  }
+
+  @keyframes draw-path {
+    0% { stroke-dasharray: 0 1000; }
+    100% { stroke-dasharray: 1000 0; }
+  }
+
+  @keyframes flow-wave {
+    0% { transform: translateX(-100%) translateY(-50%); }
+    100% { transform: translateX(100%) translateY(-50%); }
+  }
+
+  /* Light mode specific animations */
+  @keyframes light-sparkle {
+    0%, 100% { 
+      opacity: 0.3;
+      transform: scale(0.8) rotate(0deg);
+    }
+    50% { 
+      opacity: 1;
+      transform: scale(1.2) rotate(180deg);
+    }
+  }
+
+  @keyframes light-wave {
+    0%, 100% { 
+      opacity: 0.4;
+      transform: scaleX(0.8);
+    }
+    50% { 
+      opacity: 0.8;
+      transform: scaleX(1.2);
+    }
+  }
+
+  @keyframes tilt {
+    0%, 50%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(1deg); }
+    75% { transform: rotate(-1deg); }
+  }
+
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  .animate-float-fast {
+    animation: float-fast 4s ease-in-out infinite;
+  }
+
+  .animate-pulse-glow {
+    animation: pulse-glow 3s ease-in-out infinite;
+  }
+
+  .animate-draw-path {
+    animation: draw-path 8s ease-in-out infinite;
+  }
+
+  .animate-flow-wave {
+    animation: flow-wave 4s linear infinite;
+  }
+
+  .animate-light-sparkle {
+    animation: light-sparkle 4s ease-in-out infinite;
+  }
+
+  .animate-light-wave {
+    animation: light-wave 3s ease-in-out infinite;
+  }
+
+  .animate-tilt {
+    animation: tilt 10s infinite linear;
+  }
+
+  /* Animation delay utilities */
+  .animation-delay-500 { animation-delay: 0.5s; }
+  .animation-delay-1000 { animation-delay: 1s; }
+  .animation-delay-1500 { animation-delay: 1.5s; }
+  .animation-delay-2000 { animation-delay: 2s; }
+  .animation-delay-2500 { animation-delay: 2.5s; }
+  .animation-delay-3000 { animation-delay: 3s; }
+  .animation-delay-3500 { animation-delay: 3.5s; }
+  .animation-delay-4000 { animation-delay: 4s; }
+  .animation-delay-4500 { animation-delay: 4.5s; }
+  .animation-delay-5000 { animation-delay: 5s; }
+
+  /* Radial gradient utility */
+  .bg-gradient-radial {
+    background-image: radial-gradient(var(--tw-gradient-stops));
+  }
 }
