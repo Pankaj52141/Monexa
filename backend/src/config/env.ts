@@ -7,7 +7,10 @@ export const config = {
   jwtSecret: process.env.JWT_SECRET || 'dev-secret-key-monexa-2024',
   mongodbUri: process.env.MONGODB_URI || 'mongodb://localhost:27017/monexa',
   nodeEnv: process.env.NODE_ENV || 'development',
-  corsOrigins: process.env.CORS_ORIGINS?.split(',') || ['http://localhost:8080', 'http://localhost:8081', 'http://localhost:3001'],
+  corsOrigins: process.env.CORS_ORIGINS?.split(',') || [
+    'http://localhost:8080', 
+    'https://monexaa.vercel.app',
+  ],
 } as const;
 
 // Validate required environment variables in production only
