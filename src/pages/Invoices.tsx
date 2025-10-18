@@ -36,7 +36,7 @@ type Invoice = {
   id?: string;
   type: "customer" | "employee" | "other";
   recipient: string;
-  amount: string;
+  amount: string | number;
   status: string;
   date: string;
   dueDate: string;
@@ -129,13 +129,16 @@ export default function Invoices({ onLogout }: { onLogout?: () => void }) {
 
   const filteredInvoices = invoices.filter(invoice =>
     invoice.recipient.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    invoice.amount.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    String(invoice.amount).toLowerCase().includes(searchQuery.toLowerCase()) ||
     invoice.status.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const stats = {
     totalInvoices: invoices.length,
-    totalAmount: invoices.reduce((sum, inv) => sum + parseFloat(inv.amount.replace(/[$,]/g, '')), 0),
+    totalAmount: invoices.reduce((sum, inv) => {
+      const amountStr = typeof inv.amount === 'string' ? inv.amount : String(inv.amount);
+      return sum + parseFloat(amountStr.replace(/[$,]/g, ''));
+    }, 0),
     paidInvoices: invoices.filter(inv => inv.status === 'paid').length,
     pendingInvoices: invoices.filter(inv => inv.status === 'pending').length
   };

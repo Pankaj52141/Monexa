@@ -36,7 +36,7 @@ type Product = {
   id?: string;
   name: string;
   description: string;
-  price: string;
+  price: string | number;
   category: string;
   stock: number;
   active: boolean;
@@ -136,7 +136,10 @@ export default function Products({ onLogout }: { onLogout?: () => void }) {
   const stats = {
     totalProducts: products.length,
     activeProducts: products.filter(product => product.active).length,
-    totalValue: products.reduce((sum, product) => sum + parseFloat(product.price.replace(/[$,]/g, '')), 0),
+    totalValue: products.reduce((sum, product) => {
+      const priceStr = typeof product.price === 'string' ? product.price : String(product.price);
+      return sum + parseFloat(priceStr.replace(/[$,]/g, ''));
+    }, 0),
     categories: new Set(products.map(product => product.category)).size
   };
 
