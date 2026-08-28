@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "start": "tsx src/index.ts",
+    "build": "echo 'No build step needed — tsx runs TypeScript directly'",
     "dev": "tsx watch src/index.ts",
     "start:old": "node index.js"
   },
